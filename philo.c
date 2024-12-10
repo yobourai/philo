@@ -44,11 +44,25 @@ int ft_atoi(char *str, int *flag)
     return result * sign;
 }
 
+void ft_free(int **arr)
+{
+    int i = 0;
+    if(!arr)
+        return ;
+    while(arr[i])
+    {
+        free(arr[i]);
+        i++;
+    }
+    free(arr);
+}
+       #include <sys/time.h>
 int *parcing(int ac, char **av) 
 {
     int i = 1; 
     int flag = 0;
-    int *arr = malloc((ac - 1) * sizeof(int));
+    int *arr ;
+    arr = (int *)malloc((ac - 1) * sizeof(int));
     if (!arr) 
        return NULL;
     while (i < ac) 
@@ -63,64 +77,191 @@ int *parcing(int ac, char **av)
     }
     return arr;
 }
-t_philo init_argument(int *arr, int ac)
+unsigned long   ft_get_time_of_day(void)
 {
-    t_philo arg;
-    arg.number_of_philosophers = arr[0];
-    arg.time_to_die = arr[1];
-    arg.time_to_eat = arr[2];
-    arg.time_to_sleep = arr[3];
-    if (ac == 5)
-        arg.number_of_times_each_philosopher_must_eat = arr[4];
-    else
-        arg.number_of_times_each_philosopher_must_eat = -1;
+        unsigned long   mili_sc;
+        struct timeval  time;
 
-    return arg;
+        gettimeofday(&time, NULL);
+        mili_sc = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+        return (mili_sc);
 }
-int creat_philos(t_philo *arr)
+void ft_usleep(unsigned long arg)
+{
+    unsigned long start_time;
+
+    start_time = ft_get_time_of_day(); 
+
+    while (arg > ft_get_time_of_day() - start_time)
+    {
+        usleep(100);
+    }
+}
+
+
+void init_philosophers(t_philo *philos, t_data *data)
+{
+    int i;
+
+    i = 0;
+    while (i < data->number_of_philosophers)
+    {
+      philos[i].id = i + 1; 
+        philos[i].last_meal_time = data->start_time;
+        philos[i].meals_eaten = 0; 
+        philos[i].data = data;
+        philos[i].left_fork = &data->forks[i];
+        philos[i].right_fork = &data->forks[(i + 1) % data->number_of_philosophers];
+        i++;
+    }
+}
+void init_data(t_data *data, int *arr, int ac)
 {
     int i = 0;
-    pthread_t *philos = malloc(sizeof(pthread_t) * arr->number_of_philosophers);
-    if (!philos)
-        return 1;
 
-    while (i < arr->number_of_philosophers)
+    data->number_of_philosophers = arr[0];
+    data->time_to_die = arr[1];
+    data->time_to_eat = arr[2];
+    data->time_to_sleep = arr[3];
+    if (ac == 6)
+        data->number_of_times_each_philosopher_must_eat = arr[4];
+    else
+        data->number_of_times_each_philosopher_must_eat = -1;
+    data->start_time = ft_get_time_of_day();
+
+    data->forks = malloc(sizeof(pthread_mutex_t) * data->number_of_philosophers);
+    if (!data->forks)
     {
-        if (pthread_create(&philos[i], NULL, NULL, arr) != 0)
+        printf("Error: Unable to allocate memory for forks\n");
+        exit(1);
+    }
+    while (i < data->number_of_philosophers)
+    {
+        pthread_mutex_init(&data->forks[i], NULL);
+        i++;
+    }
+    pthread_mutex_init(&data->print_mutex, NULL);
+}
+
+void philosopher_think(t_philo *philo)
+{
+    pthread_mutex_lock(&philo->data->print_mutex);
+    if(philo->data->number_of_times_each_philosopher_must_eat == 0)
+       {
+            printf("%lu Philosopher %d is done eating fffffffff%d\n", ft_get_time_of_day() - philo->data->start_time, philo->id, philo->data->number_of_times_each_philosopher_must_eat);
+            pthread_mutex_unlock(&philo->data->print_mutex);
+                exit(0);
+       }
+    pthread_mutex_unlock(&philo->data->print_mutex);
+    pthread_mutex_lock(&philo->data->print_mutex);
+    printf("%lu Philosopher %d is thinking\n", ft_get_time_of_day()-philo->data->start_time , philo->id);
+    pthread_mutex_unlock(&philo->data->print_mutex);
+}
+
+void philosopher_eat(t_philo *philo)
+{
+                pthread_mutex_lock(&philo->data->print_mutex);
+    if (philo->data->number_of_times_each_philosopher_must_eat == 0)
         {
-            printf("Error creating thread %d\n", i);
-            free(philos);
+            printf("%lu Philosopher %d is done eatingjjjjjjjj%d\n", ft_get_time_of_day() - philo->data->start_time, philo->id,philo->data->number_of_times_each_philosopher_must_eat);
+             pthread_mutex_unlock(&philo->data->print_mutex);
+            exit(0);
+        }
+                     pthread_mutex_unlock(&philo->data->print_mutex);
+
+    pthread_mutex_lock(philo->left_fork);
+    pthread_mutex_lock(philo->right_fork);
+
+    printf("%lu Philosopher %d takes fork\n", ft_get_time_of_day() - philo->data->start_time, philo->id);
+    printf("%lu Philosopher %d takes fork\n", ft_get_time_of_day() - philo->data->start_time, philo->id);
+
+    pthread_mutex_lock(&philo->data->print_mutex);
+    printf("%lu Philosopher %d is eating\n", ft_get_time_of_day() - philo->data->start_time, philo->id);
+    philo->data->number_of_times_each_philosopher_must_eat--;
+    pthread_mutex_unlock(&philo->data->print_mutex);
+
+    pthread_mutex_unlock(philo->right_fork);
+    pthread_mutex_unlock(philo->left_fork);
+}
+void *philosopher_routine(void *arg) {
+    t_philo *philo = (t_philo *)arg;
+
+    while (1)
+    {
+        if(philo->data->time_to_die <= ft_get_time_of_day() - philo->last_meal_time)
+        {
+            pthread_mutex_lock(&philo->data->print_mutex);
+            printf("%lu Philosopher %d has mmmdied\n",ft_get_time_of_day() - philo->data->start_time, philo->id);
+            pthread_mutex_unlock(&philo->data->print_mutex);
+                    exit(0);
+        }
+        philosopher_think(philo);
+        philosopher_eat(philo);
+        pthread_mutex_lock(&philo->data->print_mutex);
+        if (philo->data->number_of_times_each_philosopher_must_eat == 0)
+        {
+            printf("%lu Philosopher %d is done eatingppp\n",ft_get_time_of_day() - philo->data->start_time, philo->id);
+            pthread_mutex_unlock(&philo->data->print_mutex);
+            exit(0);
+        }
+        pthread_mutex_unlock(&philo->data->print_mutex);
+                pthread_mutex_lock(&philo->data->print_mutex);
+        printf("%lu Philosopher %d is sleeping\n",ft_get_time_of_day() - philo->data->start_time, philo->id);
+        ft_usleep(philo->data->time_to_sleep);
+         pthread_mutex_unlock(&philo->data->print_mutex);
+
+    }
+    return NULL;
+}
+int create_philos(t_philo *philos, t_data *data)
+{
+    int i;
+
+    i = 0;
+    while (i < data->number_of_philosophers)
+    {
+        if (pthread_create(&philos[i].thread, NULL, philosopher_routine, &philos[i]) != 0)
+        {
+            printf("Error: Failed to create thread %d\n", i);
             return 1;
         }
         i++;
     }
     i = 0;
-    while( i < arr->number_of_philosophers)
+    while (i < data->number_of_philosophers)
     {
-        pthread_join(philos[i], NULL);
+        pthread_join(philos[i].thread, NULL);
         i++;
     }
-    free(philos);
     return 0;
 }
 
-int main(int ac, char **av) 
+int main(int ac, char **av)
 {
-    int *arr ;
-    if (arr  &&  ac == 5 || ac == 6) 
+    t_data data;
+    t_philo *philos;
+    int *arr;
+    if (ac != 5 && ac != 6)
     {
-        arr = parcing(ac, av);
-        if (arr) 
-            printf("Parsing good\n");
-        else 
-            return 1;
-    } 
-    else 
-    {
-        printf("Error in the number of argument\n");
-            return 1;
+        printf("Error: Invalid number of arguments\n");
+        return 1;
     }
-    t_philo args ;
-        args = init_argument(arr, ac - 1);
+    arr = parcing(ac, av);
+    if (!arr)
+        return 1;
+
+    init_data(&data, arr, ac);
+    philos = malloc(sizeof(t_philo) * data.number_of_philosophers);
+    if (!philos)
+    {
+        printf("Error: Unable to allocate memory for philosophers\n");
+        return 1;
+    }
+    init_philosophers(philos, &data);
+    if (create_philos(philos, &data) != 0)
+        return 1;
+    free(data.forks);
+    free(philos);
+    free(arr);
     return 0;
 }
