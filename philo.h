@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   philo.h                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/12/13 16:19:02 by yobourai          #+#    #+#             */
+/*   Updated: 2024/12/13 16:26:24 by yobourai         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef PHILO_H
 # define PHILO_H
 
@@ -14,7 +26,8 @@ typedef struct s_data
     unsigned long time_to_eat;
     unsigned long time_to_sleep;
     int number_of_times_each_philosopher_must_eat; 
-    unsigned long start_time; 
+    unsigned long start_time;
+    unsigned long stop_eating;
     pthread_mutex_t print_mutex;
     pthread_mutex_t *forks;
     struct s_philo *philos;
