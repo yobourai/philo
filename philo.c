@@ -6,7 +6,7 @@
 /*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 16:18:49 by yobourai          #+#    #+#             */
-/*   Updated: 2024/12/13 17:56:34 by yobourai         ###   ########.fr       */
+/*   Updated: 2024/12/17 07:34:49 by yobourai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -175,11 +175,17 @@ void philosopher_eat(t_philo *philo)
     pthread_mutex_lock(&philo->data->died);
     if(philo->data->matwldl97ba == 0)
     {
+         if(philo->data->matwldl97ba == 1)
+                return ;
         pthread_mutex_lock(philo->left_fork);
         printf("%lu Philosopher %d takes left fork \n", ft_get_time_of_day() - philo->data->start_time, philo->id);
+        if(philo->data->matwldl97ba == 1)
+                return ;
 
         pthread_mutex_lock(philo->right_fork);
         printf("%lu Philosopher %d takes right fork\n", ft_get_time_of_day() - philo->data->start_time, philo->id);
+        if(philo->data->matwldl97ba == 1)
+            return ;
 
         pthread_mutex_lock(&philo->data->print_mutex);
         printf("%lu Philosopher %d is eating\n", ft_get_time_of_day() - philo->data->start_time, philo->id);
@@ -191,8 +197,8 @@ void philosopher_eat(t_philo *philo)
         pthread_mutex_unlock(&philo->data->meal_mutex);
         ft_usleep(philo->data->time_to_eat);
 
-        pthread_mutex_unlock(philo->right_fork);
         pthread_mutex_unlock(philo->left_fork);
+        pthread_mutex_unlock(philo->right_fork);
     }
     else
         pthread_mutex_unlock(&philo->data->died);
@@ -216,11 +222,17 @@ void *philosopher_routine(void *arg)
                 printf("%lu Philosopher %d has died\n",ft_get_time_of_day() - philo->data->start_time, philo->id);
                 philo->data->matwldl97ba = 1; 
             }
-            pthread_mutex_unlock(&philo->data->print_mutex);
-            pthread_mutex_unlock(&philo->data->died);
-            return NULL;
+            //return NULL;
+            if (philo->data->matwldl97ba == 1)
+            {
+                puts("ZAAAAB");
+                pthread_mutex_unlock(&philo->data->print_mutex);
+                pthread_mutex_unlock(&philo->data->died);
+                //pthread_mutex_unlock(&philo->data->died);
+                break;
+            }
         }
-        pthread_mutex_unlock(&philo->data->died);
+        //pthread_mutex_unlock(&philo->data->died);
         pthread_mutex_lock(&philo->data->meal_mutex);
         if (philo->data->stop_eating == 0)
         {
@@ -232,18 +244,18 @@ void *philosopher_routine(void *arg)
         philosopher_think(philo);
         philosopher_eat(philo);
         pthread_mutex_lock(&philo->data->died);
-        if (philo->data->matwldl97ba)
-        {
-            pthread_mutex_unlock(&philo->data->died);
-            return NULL;
-        }
         pthread_mutex_unlock(&philo->data->died);
-
+        if(philo->data->matwldl97ba == 1)
+            return NULL;
         pthread_mutex_lock(&philo->data->print_mutex);
-        printf("%lu Philosopher %d is sleeping\n", 
-               ft_get_time_of_day() - philo->data->start_time, philo->id);
+        printf("%lu Philosopher %d is sleeping\n", ft_get_time_of_day() - philo->data->start_time, philo->id);
         pthread_mutex_unlock(&philo->data->print_mutex);
         ft_usleep(philo->data->time_to_sleep);
+    }
+    if (philo->data->matwldl97ba == 1){
+        pthread_mutex_unlock(&philo->data->print_mutex);
+        pthread_mutex_unlock(&philo->data->died);
+        puts("TBON");
     }
     return NULL;
 }
@@ -294,6 +306,7 @@ int main(int ac, char **av)
     init_philosophers(philos, &data);
     if (create_philos(philos, &data) != 0)
         return 1;
+    pthread_mutex_unlock(&philos->data->died);
     free(data.forks);
     free(philos);
     free(arr);
