@@ -6,7 +6,7 @@
 /*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 16:18:49 by yobourai          #+#    #+#             */
-/*   Updated: 2024/12/19 08:18:15 by yobourai         ###   ########.fr       */
+/*   Updated: 2024/12/19 08:22:53 by yobourai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,10 +24,13 @@ int ft_strlen(char *str)
 
 int ft_atoi(char *str, int *flag)
 {
-    int i = 0;
-    int sign = 1;
-    int result = 0;
-
+    int i ;
+    int result ;
+    int sign;
+    
+    i= 0;
+    sign = 1;
+    result = 0;
     while (str[i] == ' ' || str[i] == '\t' || (str[i] >= 9 && str[i] <= 13))
         i++;
     if (str[i] == '+' || str[i] == '-') 
@@ -38,7 +41,6 @@ int ft_atoi(char *str, int *flag)
     }
     if (!(str[i] >= '0' && str[i] <= '9')) 
     {
-        write(2, "Error\n", 6);
         *flag = 1;
         return 1;
     }
@@ -49,7 +51,6 @@ int ft_atoi(char *str, int *flag)
     }
     if(str[i] != '\0' || result * sign <= 0) 
     {
-        write(2, "Error\n", 6);
         *flag = 1;
         return 1;
     }
@@ -82,6 +83,7 @@ int *parcing(int ac, char **av)
         arr[i - 1] = ft_atoi(av[i], &flag);
         if (flag) 
         {
+            printf("Error\n");
             free(arr);
             return NULL;
         }
@@ -210,7 +212,7 @@ void philosopher_eat(t_philo *philo)
             pthread_mutex_lock(&philo->data->died);
         if(philo->data->matwldl97ba == 1)
            {
-              pthread_mutex_unlock(philo->left_fork);
+                pthread_mutex_unlock(philo->left_fork);
                 pthread_mutex_unlock(philo->right_fork);
                 pthread_mutex_unlock(&philo->data->print_mutex);
                 return ;
@@ -294,6 +296,7 @@ int protect (t_philo *philo)
             }
             pthread_mutex_unlock(&philo->data->died); 
         }
+    return 0;
 }
 
 void *philosopher_routine(void *arg) 
@@ -356,7 +359,6 @@ int main(int ac, char **av)
     arr = parcing(ac, av);
     if (!arr)
         return 1;
-
     init_data(&data, arr, ac);
     philos = malloc(sizeof(t_philo) * data.number_of_philosophers);
     if (!philos)
@@ -367,7 +369,6 @@ int main(int ac, char **av)
     init_philosophers(philos, &data);
     if (create_philos(philos, &data) != 0)
         return 1;
-    // pthread_mutex_unlock(&philos->data->died);
     free(data.forks);
     free(philos);
     free(arr);
