@@ -6,7 +6,7 @@
 /*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 16:18:49 by yobourai          #+#    #+#             */
-/*   Updated: 2024/12/19 08:11:53 by yobourai         ###   ########.fr       */
+/*   Updated: 2024/12/19 08:18:15 by yobourai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -274,13 +274,8 @@ int  check_out(t_philo *philo)
         pthread_mutex_unlock(&philo->data->meal_mutex);
     return 0;
 }
-void *philosopher_routine(void *arg) 
+int protect (t_philo *philo)
 {
-    t_philo *philo = (t_philo *)arg;
-    if(philo->id % 2 == 0 && philo->data->matwldl97ba != 1)
-            sleeping(philo);
-    while (1)
-    {
         if (philo->data->time_to_die <= ft_get_time_of_day() - philo->last_meal_time)
         {
             pthread_mutex_lock(&philo->data->print_mutex);
@@ -295,10 +290,21 @@ void *philosopher_routine(void *arg)
             if (philo->data->matwldl97ba == 1)
             {
                 pthread_mutex_unlock(&philo->data->print_mutex);
-                break;
+                    return 1;
             }
             pthread_mutex_unlock(&philo->data->died); 
         }
+}
+
+void *philosopher_routine(void *arg) 
+{
+    t_philo *philo = (t_philo *)arg;
+    if(philo->id % 2 == 0 && philo->data->matwldl97ba != 1)
+            sleeping(philo);
+    while (1)
+    {
+        if(protect(philo) == 1)
+            break;
         if(check_out(philo) == 1)
             return NULL;
         philosopher_think(philo);
@@ -313,7 +319,6 @@ void *philosopher_routine(void *arg)
             return NULL;
     return NULL;
 }
-
 
 int create_philos(t_philo *philos, t_data *data)
 {
