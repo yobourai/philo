@@ -6,7 +6,7 @@
 /*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 16:18:49 by yobourai          #+#    #+#             */
-/*   Updated: 2024/12/18 04:12:34 by yobourai         ###   ########.fr       */
+/*   Updated: 2024/12/19 05:23:21 by yobourai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,10 +119,12 @@ void init_philosophers(t_philo *philos, t_data *data)
         philos[i].last_meal_time = data->start_time;
         philos[i].meals_eaten = 0;
         philos[i].data = data;
-        philos[i].left_fork = &data->forks[i];
-        philos[i].right_fork = &data->forks[(i + 1)];
+        philos[i].data->matwldl97ba = 0;
+        philos[i].right_fork = &data->forks[i];
+        philos[i].left_fork = &data->forks[i+1];
         i++;
     }
+    philos[i].left_fork = &data->forks[0];
 } 
 void init_data(t_data *data, int *arr, int ac)
 {
@@ -137,7 +139,6 @@ void init_data(t_data *data, int *arr, int ac)
     else
         data->number_of_times_each_philosopher_must_eat = -1;
     data->start_time = ft_get_time_of_day();
-    data->matwldl97ba = 0;
     data->stop_eating = data->number_of_times_each_philosopher_must_eat * data->number_of_philosophers;
     data->forks = malloc(sizeof(pthread_mutex_t) * data->number_of_philosophers);
     if (!data->forks)
@@ -173,8 +174,10 @@ void philosopher_think(t_philo *philo)
 void philosopher_eat(t_philo *philo)
 {
     pthread_mutex_lock(&philo->data->died);
-    if(philo->data->matwldl97ba == 0)
+    if(philo->data->matwldl97ba == 0 )
     {
+        pthread_mutex_unlock(&philo->data->died);
+        pthread_mutex_lock(&philo->data->died);
          if(philo->data->matwldl97ba == 1)
             {
                  pthread_mutex_unlock(&philo->data->died);
@@ -191,14 +194,14 @@ void philosopher_eat(t_philo *philo)
             }
         pthread_mutex_unlock(&philo->data->died);
         pthread_mutex_lock(philo->right_fork);    
-        printf("%lu Philosopher %d takes right fork %dmatwldlqahba\n", ft_get_time_of_day() - philo->data->start_time, philo->id , philo->data->matwldl97ba);
+        printf("%lu Philosopher %d takes right fork mtawel%d\n", ft_get_time_of_day() - philo->data->start_time, philo->id , philo->data->matwldl97ba);
          pthread_mutex_lock(&philo->data->died);
         if(philo->data->matwldl97ba == 1)
         {
-                    pthread_mutex_unlock(&philo->data->died);
+                pthread_mutex_unlock(&philo->data->died);
                 return ;
         }
-                pthread_mutex_unlock(&philo->data->died);
+        pthread_mutex_unlock(&philo->data->died);
         pthread_mutex_lock(&philo->data->died);
         if(philo->data->matwldl97ba == 1)
           {
@@ -235,8 +238,24 @@ void philosopher_eat(t_philo *philo)
 void *philosopher_routine(void *arg) 
 {
     t_philo *philo = (t_philo *)arg;
+    if(philo->id % 2 == 0)
+    {
+        pthread_mutex_lock(&philo->data->print_mutex);
+
+        printf("%lu Philosopher %d is sleeping\n", ft_get_time_of_day() - philo->data->start_time, philo->id);
+        pthread_mutex_unlock(&philo->data->print_mutex);
+        ft_usleep(philo->data->time_to_sleep);
+    }
+            
     while (1)
     {
+        pthread_mutex_lock(&philo->data->meal_mutex);
+        if (philo->data->stop_eating == 0)
+        {
+            pthread_mutex_unlock(&philo->data->meal_mutex);
+            return NULL;
+        }
+        pthread_mutex_unlock(&philo->data->meal_mutex);
         pthread_mutex_lock(&philo->data->died);
         if (philo->data->matwldl97ba)
         {
@@ -251,20 +270,16 @@ void *philosopher_routine(void *arg)
                 printf("%lu Philosopher %d has died\n",ft_get_time_of_day() - philo->data->start_time, philo->id);
                 philo->data->matwldl97ba = 1; 
             }
-            //return NULL;
             if (philo->data->matwldl97ba == 1)
             {
                 pthread_mutex_unlock(&philo->data->died);
                 pthread_mutex_unlock(&philo->data->print_mutex);
-                //pthread_mutex_unlock(&philo->data->died);
                 break;
             }
         }
-        //pthread_mutex_unlock(&philo->data->died);
         pthread_mutex_lock(&philo->data->meal_mutex);
         if (philo->data->stop_eating == 0)
         {
-            printf("Philosophers has eaten enough\n");
             pthread_mutex_unlock(&philo->data->meal_mutex);
             return NULL;
         }
@@ -277,11 +292,21 @@ void *philosopher_routine(void *arg)
                 return NULL;
         }
         pthread_mutex_unlock(&philo->data->died);
+        pthread_mutex_lock(&philo->data->meal_mutex);
+        if (philo->data->stop_eating == 0)
+        {
+            pthread_mutex_unlock(&philo->data->meal_mutex);
+            return NULL;
+        }
+        pthread_mutex_unlock(&philo->data->meal_mutex);
         philosopher_eat(philo);
-        pthread_mutex_unlock(philo->left_fork);
-        pthread_mutex_unlock(philo->right_fork);
-
-
+        pthread_mutex_lock(&philo->data->meal_mutex);
+        if (philo->data->stop_eating == 0)
+        {
+            pthread_mutex_unlock(&philo->data->meal_mutex);
+            return NULL;
+        }
+        pthread_mutex_unlock(&philo->data->meal_mutex);
         pthread_mutex_lock(&philo->data->died);
         if(philo->data->matwldl97ba == 1)
         {
@@ -295,11 +320,19 @@ void *philosopher_routine(void *arg)
         pthread_mutex_unlock(&philo->data->print_mutex);
         ft_usleep(philo->data->time_to_sleep);
     }
+    pthread_mutex_lock(&philo->data->died);
     if (philo->data->matwldl97ba == 1)
     {
         pthread_mutex_unlock(&philo->data->print_mutex);
         pthread_mutex_unlock(&philo->data->died);
     }
+       pthread_mutex_lock(&philo->data->meal_mutex);
+        if (philo->data->stop_eating == 0)
+        {
+            pthread_mutex_unlock(&philo->data->meal_mutex);
+            return NULL;
+        }
+        pthread_mutex_unlock(&philo->data->meal_mutex);
     return NULL;
 }
 int create_philos(t_philo *philos, t_data *data)
@@ -349,7 +382,7 @@ int main(int ac, char **av)
     init_philosophers(philos, &data);
     if (create_philos(philos, &data) != 0)
         return 1;
-    pthread_mutex_unlock(&philos->data->died);
+    // pthread_mutex_unlock(&philos->data->died);
     free(data.forks);
     free(philos);
     free(arr);
