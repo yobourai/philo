@@ -6,7 +6,7 @@
 /*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 16:19:02 by yobourai          #+#    #+#             */
-/*   Updated: 2024/12/13 16:26:24 by yobourai         ###   ########.fr       */
+/*   Updated: 2024/12/19 06:24:38 by yobourai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ typedef struct s_data
     int number_of_times_each_philosopher_must_eat; 
     unsigned long start_time;
     unsigned long stop_eating;
+    int check_death;
     pthread_mutex_t print_mutex;
     pthread_mutex_t *forks;
     struct s_philo *philos;
