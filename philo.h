@@ -6,7 +6,7 @@
 /*   By: yobourai <yobourai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/13 16:19:02 by yobourai          #+#    #+#             */
-/*   Updated: 2024/12/19 06:24:38 by yobourai         ###   ########.fr       */
+/*   Updated: 2024/12/20 02:12:40 by yobourai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,12 @@ typedef struct s_data
     pthread_mutex_t print_mutex;
     pthread_mutex_t *forks;
     struct s_philo *philos;
+    int flag;
     int matwldl97ba;
     pthread_mutex_t meal_mutex; 
     pthread_mutex_t died;
+    pthread_mutex_t check;
+    pthread_mutex_t one_philo;
         
 } t_data;
 
